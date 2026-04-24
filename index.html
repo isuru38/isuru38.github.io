@@ -32,10 +32,16 @@ body{background:#04040a;color:#7878a0;font-family:'Outfit',sans-serif;overflow-x
 /* CANVAS */
 #bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55}
 
-/* CURSOR */
-#c-dot{position:fixed;width:7px;height:7px;background:var(--cyan);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%)}
-#c-ring{position:fixed;width:38px;height:38px;border:1px solid rgba(124,92,252,.55);border-radius:50%;pointer-events:none;z-index:9997;transform:translate(-50%,-50%);transition:width .3s,height .3s,border-color .3s,background .3s}
+/* CURSOR — hidden by default on touch, shown via JS on desktop */
+#c-dot{position:fixed;width:7px;height:7px;background:var(--cyan);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);display:none}
+#c-ring{position:fixed;width:38px;height:38px;border:1px solid rgba(124,92,252,.55);border-radius:50%;pointer-events:none;z-index:9997;transform:translate(-50%,-50%);transition:width .3s,height .3s,border-color .3s,background .3s;display:none}
 body.hov #c-ring{width:60px;height:60px;background:rgba(124,92,252,.09);border-color:var(--accent)}
+/* Only hide system cursor on devices that support hover (non-touch) */
+@media(hover:hover) and (pointer:fine){
+  body{cursor:none}
+  #c-dot,#c-ring{display:block}
+  .btn{cursor:none}
+}
 
 /* NAV */
 nav{position:fixed;top:1.4rem;left:50%;transform:translateX(-50%);z-index:200;background:rgba(8,8,18,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:100px;padding:.65rem 1.4rem;display:flex;align-items:center;gap:2rem;white-space:nowrap}
@@ -73,9 +79,124 @@ nav{position:fixed;top:1.4rem;left:50%;transform:translateX(-50%);z-index:200;ba
 section{position:relative;z-index:1}
 
 /* HERO */
-#hero{min-height:100svh;display:flex;align-items:center;padding:7rem 0 5rem;overflow:hidden}
+#hero{min-height:100vh;min-height:100svh;display:flex;align-items:center;padding:7rem 0 5rem;overflow:hidden;perspective:1200px}
+/* PARALLAX LAYERS */
+.parallax-bg{position:absolute;inset:-20%;pointer-events:none;will-change:transform;z-index:0}
+.parallax-orb{position:absolute;border-radius:50%;filter:blur(90px);will-change:transform}
+.orb-a{width:600px;height:600px;background:radial-gradient(circle,rgba(124,92,252,.12) 0%,transparent 70%);top:-100px;right:-80px}
+.orb-b{width:400px;height:400px;background:radial-gradient(circle,rgba(0,229,255,.07) 0%,transparent 70%);bottom:0;left:10%}
+/* hero inner - parallax target */
+.hero-parallax{will-change:transform;transition:transform .1s linear;width:100%}
+/* hero 2-col layout */
+.hero-layout{display:grid;grid-template-columns:1fr auto;gap:3rem;align-items:center}
+.hero-left{min-width:0}
+
+/* HERO PHOTO */
+.hero-photo-wrap{position:relative;flex-shrink:0;opacity:0}
+.hero-photo-frame{
+  position:relative;
+  width:300px;height:360px;
+  border-radius:24px;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+.hero-photo-frame img{
+  width:100%;height:100%;
+  object-fit:cover;object-position:center top;
+  display:block;
+}
+/* placeholder when no photo */
+.hero-photo-placeholder{
+  width:100%;height:100%;
+  background:linear-gradient(160deg,var(--card) 0%,var(--surface) 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;
+}
+.php-avatar{
+  width:90px;height:90px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--cyan));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#fff;
+  box-shadow:0 0 40px rgba(124,92,252,.4);
+}
+.php-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.1em;color:var(--white)}
+.php-hint{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text);letter-spacing:.08em;text-align:center;padding:0 1rem;line-height:1.6}
+/* glowing border animation */
+.hero-photo-frame::before{
+  content:'';position:absolute;inset:0;border-radius:24px;
+  background:linear-gradient(135deg,var(--accent),var(--cyan),var(--accent));
+  padding:1px;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+  animation:borderSpin 4s linear infinite;
+  opacity:.6;
+}
+@keyframes borderSpin{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+/* floating badge on photo */
+.photo-badge{
+  position:absolute;bottom:-1rem;left:-1rem;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:.75rem 1rem;
+  display:flex;align-items:center;gap:.7rem;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+  white-space:nowrap;
+}
+.pb-dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);animation:pulse 2s ease-in-out infinite;flex-shrink:0}
+.pb-txt{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--white);letter-spacing:.05em}
+/* floating exp badge */
+.photo-exp{
+  position:absolute;top:-1rem;right:-1rem;
+  background:linear-gradient(135deg,var(--accent),#9070ff);
+  border-radius:12px;padding:.65rem .9rem;
+  text-align:center;
+  box-shadow:var(--glows);
+}
+.pe-num{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#fff;line-height:1}
+.pe-lbl{font-family:'JetBrains Mono',monospace;font-size:.5rem;color:rgba(255,255,255,.75);letter-spacing:.08em;text-transform:uppercase;margin-top:.1rem}
+
+/* IMPROVED SMALL PROJECT CARDS */
+.projs-g{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:1.5rem}
+.proj-card-sm{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:0;
+  overflow:hidden;
+  position:relative;
+  transition:transform .4s cubic-bezier(.4,0,.2,1),border-color .4s,box-shadow .4s;
+}
+.proj-card-sm:hover{transform:translateY(-8px);box-shadow:0 24px 60px rgba(0,0,0,.5)}
+/* top colour bar per card */
+.proj-card-sm:nth-child(1){border-top:2px solid #7c5cfc}
+.proj-card-sm:nth-child(2){border-top:2px solid #00e5ff}
+.proj-card-sm:nth-child(3){border-top:2px solid #ff6b35}
+.proj-card-sm:hover{border-color:rgba(124,92,252,.35)}
+/* preview strip at top */
+.pcs-preview{
+  height:130px;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.proj-card-sm:nth-child(1) .pcs-preview{background:linear-gradient(135deg,rgba(124,92,252,.18) 0%,rgba(124,92,252,.04) 100%)}
+.proj-card-sm:nth-child(2) .pcs-preview{background:linear-gradient(135deg,rgba(0,229,255,.12) 0%,rgba(0,229,255,.03) 100%)}
+.proj-card-sm:nth-child(3) .pcs-preview{background:linear-gradient(135deg,rgba(255,107,53,.12) 0%,rgba(255,107,53,.03) 100%)}
+.pcs-icon{font-size:3rem;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));transition:transform .4s cubic-bezier(.4,0,.2,1)}
+.proj-card-sm:hover .pcs-icon{transform:scale(1.18) translateY(-4px)}
+.pcs-body{padding:1.5rem}
+.pcs-num{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text);letter-spacing:.14em;margin-bottom:.6rem}
+.proj-card-sm:nth-child(1) .pcs-num{color:rgba(124,92,252,.7)}
+.proj-card-sm:nth-child(2) .pcs-num{color:rgba(0,229,255,.7)}
+.proj-card-sm:nth-child(3) .pcs-num{color:rgba(255,107,53,.7)}
+.pcs-title{font-family:'Bebas Neue',sans-serif;font-size:1.25rem;color:var(--white);letter-spacing:.04em;margin-bottom:.7rem;line-height:1.1}
+.pcs-desc{font-size:.8rem;line-height:1.75;color:var(--text);margin-bottom:1.1rem}
+.pcs-tags{display:flex;flex-wrap:wrap;gap:.4rem}
+.pcs-tag{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  padding:.2rem .65rem;border-radius:100px;font-weight:500;
+}
+.proj-card-sm:nth-child(1) .pcs-tag{background:rgba(124,92,252,.1);border:1px solid rgba(124,92,252,.2);color:var(--accent)}
+.proj-card-sm:nth-child(2) .pcs-tag{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);color:var(--cyan)}
+.proj-card-sm:nth-child(3) .pcs-tag{background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.2);color:#ff6b35}
 .hero-eyebrow{display:inline-flex;align-items:center;gap:.7rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);margin-bottom:1.6rem;opacity:0}
-.ep{width:7px;height:7px;border-radius:50%;background:var(--cyan);animation:pulse 2s ease-in-out infinite}
+.ep{width:7px;height:7px;border-radius:50%;background:var(--cyan);animation:pulse 2s ease-in-out infinite;flex-shrink:0}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,229,255,.5)}50%{box-shadow:0 0 0 9px rgba(0,229,255,0)}}
 .hero-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(5rem,13vw,11rem);line-height:.92;letter-spacing:.025em;color:var(--white)}
 .hn-line{display:block;overflow:hidden}
@@ -205,17 +326,30 @@ footer b{color:var(--accent)}
 [data-r].vis{opacity:1!important;transform:none!important}
 
 /* RESPONSIVE */
+@media(max-width:1100px){
+  .hero-photo-frame{width:240px;height:290px}
+  .hero-layout{gap:2rem}
+}
 @media(max-width:1024px){
   .skills-g{grid-template-columns:repeat(2,1fr)}
   .projs-g{grid-template-columns:repeat(2,1fr)}
   .about-g{grid-template-columns:1fr;gap:3rem}
   .about-card{max-width:420px}
+  .hero-layout{grid-template-columns:1fr auto}
+  .hero-photo-frame{width:210px;height:260px}
 }
 @media(max-width:768px){
   nav{top:.9rem;left:.9rem;right:.9rem;transform:none;border-radius:14px;padding:.72rem 1.1rem;justify-content:space-between;gap:0}
   .nav-links{display:none}
   .hbg{display:flex}
   #hero{padding:6.5rem 0 4rem}
+  /* stack hero on mobile */
+  .hero-layout{grid-template-columns:1fr;gap:2rem}
+  .hero-photo-wrap{display:flex;justify-content:center;order:-1}
+  .hero-photo-frame{width:160px;height:190px;border-radius:18px}
+  .photo-badge{bottom:-.75rem;left:-.5rem;padding:.55rem .75rem}
+  .photo-exp{top:-.75rem;right:-.5rem;padding:.5rem .7rem}
+  .pe-num{font-size:1.1rem}
   .hero-name{font-size:clamp(3.8rem,14vw,6rem)}
   .hero-sub{flex-direction:column;gap:.8rem}
   .hero-vline{display:none}
@@ -239,11 +373,20 @@ footer b{color:var(--accent)}
   .stat{padding:1.5rem 1rem}
   .ct-title{font-size:clamp(2.2rem,11vw,3rem)}
   .hero-name{font-size:clamp(3rem,13vw,5rem)}
+  .projs-g{grid-template-columns:1fr}
 }
-.highlight{
-  color:var(--white);
-  font-weight:600;
+/* PARALLAX SECTION DECORATORS */
+.px-deco{position:absolute;pointer-events:none;will-change:transform;z-index:0}
+.px-line{width:1px;background:linear-gradient(to bottom,transparent,var(--accent),transparent);opacity:.18}
+.px-dot-grid{
+  background-image:radial-gradient(rgba(124,92,252,.25) 1px,transparent 1px);
+  background-size:28px 28px;
+  opacity:.35;
+  will-change:transform;
 }
+/* featured card needs perspective for tilt */
+.proj-featured{margin-bottom:1.5rem;perspective:1000px}
+
 </style>
 </head>
 <body>
@@ -289,26 +432,63 @@ footer b{color:var(--accent)}
 
 <!-- HERO -->
 <section id="hero">
+  <!-- Parallax background orbs -->
+  <div class="parallax-bg" id="heroParallaxBg">
+    <div class="parallax-orb orb-a" id="orbA"></div>
+    <div class="parallax-orb orb-b" id="orbB"></div>
+  </div>
   <div class="wrap">
-    <div class="hero-eyebrow" id="heroEyebrow">
-      <span class="ep"></span>
-      Available for internships &amp; opportunities
-    </div>
-    <h1 class="hero-name">
-      <span class="hn-line"><span class="hn-inner">ISURU</span></span>
-      <span class="hn-line"><span class="hn-inner hn-stroke">RAVISHAN</span></span>
-    </h1>
-    <div class="hero-sub" id="heroSub">
-      <p class="hero-desc">Software Engineering Undergraduate at IIT · Full-Stack Developer building production-grade systems with Java, Spring Boot, Next.js and AWS.</p>
-      <div class="hero-vline"></div>
-      <div class="hero-loc">
-        <span>📍</span> Matara,<br/><span>Sri Lanka 🇱🇰</span>
+    <div class="hero-parallax" id="heroParallax">
+    <div class="hero-layout">
+      <!-- LEFT: text content -->
+      <div class="hero-left">
+        <div class="hero-eyebrow" id="heroEyebrow">
+          <span class="ep"></span>
+          Available for internships &amp; opportunities
+        </div>
+        <h1 class="hero-name">
+          <span class="hn-line"><span class="hn-inner">ISURU</span></span>
+          <span class="hn-line"><span class="hn-inner hn-stroke">RAVISHAN</span></span>
+        </h1>
+        <div class="hero-sub" id="heroSub">
+          <p class="hero-desc">Software Engineering Undergraduate at IIT · Full-Stack Developer building production-grade systems with Java, Spring Boot, Next.js and AWS.</p>
+          <div class="hero-vline"></div>
+          <div class="hero-loc">
+            <span>📍</span> Matara,<br/><span>Sri Lanka 🇱🇰</span>
+          </div>
+        </div>
+        <div class="hero-btns" id="heroBtns">
+          <a href="#projects" class="btn btn-p">View My Work →</a>
+          <a href="#contact" class="btn btn-o">Get In Touch</a>
+        </div>
       </div>
-    </div>
-    <div class="hero-btns" id="heroBtns">
-      <a href="#projects" class="btn btn-p">View My Work →</a>
-      <a href="#contact" class="btn btn-o">Get In Touch</a>
-    </div>
+      <!-- RIGHT: photo -->
+      <div class="hero-photo-wrap" id="heroPhoto">
+        <div class="hero-photo-frame">
+          <!--
+            PHOTO: Replace the placeholder below with your actual photo.
+            Example: <img src="photo.jpg" alt="Isuru Ravishan" />
+            Upload photo.jpg to the same folder as index.html on GitHub.
+          -->
+          <div class="hero-photo-placeholder">
+            <div class="php-avatar">IR</div>
+            <div class="php-name">ISURU RAVISHAN</div>
+			<img src="photo.jpg" alt="Isuru Ravishan" />
+            
+          </div>
+        </div>
+        <!-- floating badges -->
+        <div class="photo-badge">
+          <div class="pb-dot"></div>
+          <div class="pb-txt">Open to Internships</div>
+        </div>
+        <div class="photo-exp">
+          <div class="pe-num">2+</div>
+          <div class="pe-lbl">Yrs Coding</div>
+        </div>
+      </div>
+    </div><!-- /hero-layout -->
+    </div><!-- /hero-parallax -->
   </div>
   <div class="scroll-cue" id="scrollCue">
     <span class="scroll-cue-txt">scroll</span>
@@ -328,6 +508,7 @@ footer b{color:var(--accent)}
 
 <!-- ABOUT -->
 <section id="about">
+  <div class="px-deco px-line" style="height:100%;top:0;left:8%" data-px-speed="0.08"></div>
   <div class="wrap">
     <div class="about-g">
       <div data-r="left">
@@ -362,6 +543,8 @@ footer b{color:var(--accent)}
 
 <!-- SKILLS -->
 <section id="skills">
+  <div class="px-deco px-dot-grid" style="width:200px;height:200px;top:3rem;right:2rem" data-px-speed="0.12"></div>
+  <div class="px-deco px-dot-grid" style="width:160px;height:160px;bottom:3rem;left:2rem" data-px-speed="0.06"></div>
   <div class="wrap">
     <div class="sh" data-r="up">
       <div class="sh-tag">02 — Skills</div>
@@ -380,6 +563,7 @@ footer b{color:var(--accent)}
 
 <!-- PROJECTS -->
 <section id="projects">
+  <div class="px-deco px-line" style="height:100%;top:0;right:12%" data-px-speed="0.1"></div>
   <div class="wrap">
     <div class="sh" data-r="up">
       <div class="sh-tag">03 — Projects</div>
@@ -403,9 +587,47 @@ footer b{color:var(--accent)}
       </div>
     </div>
     <div class="projs-g">
-      <div class="proj-card proj-card-sm" data-r="up"><div class="proj-num">01 — 2026</div><div class="proj-title">Cafe Billing System</div><div class="proj-desc">Full-stack cafe management with REST APIs, automated billing, invoice generation, tax calculation, and real-time analytics dashboard handling 100+ transactions.</div><div class="proj-tags"><span class="ptag">Spring Boot</span><span class="ptag">Next.js</span><span class="ptag">PostgreSQL</span></div></div>
-      <div class="proj-card proj-card-sm" data-r="up"><div class="proj-num">02 — 2024</div><div class="proj-title">Climate Action Website</div><div class="proj-desc">Responsive 5-page website promoting climate awareness with improved navigation and accessibility across all pages and screen sizes.</div><div class="proj-tags"><span class="ptag">HTML5</span><span class="ptag">CSS3</span></div></div>
-      <div class="proj-card proj-card-sm" data-r="up"><div class="proj-num">03 — 2024</div><div class="proj-title">Python Task Manager</div><div class="proj-desc">CLI task management app handling 50+ tasks with full CRUD operations, input validation, and a menu-driven interface to reduce user errors.</div><div class="proj-tags"><span class="ptag">Python</span><span class="ptag">CRUD</span><span class="ptag">CLI</span></div></div>
+      <!-- Card 1: Cafe Billing -->
+      <div class="proj-card-sm" data-r="up">
+        <div class="pcs-preview"><div class="pcs-icon"></div></div>
+        <div class="pcs-body">
+          <div class="pcs-num">01 — 2026</div>
+          <div class="pcs-title">Cafe Billing System</div>
+          <div class="pcs-desc">Full-stack cafe management with REST APIs, automated billing, invoice generation, tax calculation, and real-time analytics dashboard handling 100+ transactions.</div>
+          <div class="pcs-tags">
+            <span class="pcs-tag">Spring Boot</span>
+            <span class="pcs-tag">Next.js</span>
+            <span class="pcs-tag">PostgreSQL</span>
+          </div>
+        </div>
+      </div>
+      <!-- Card 2: Climate Action -->
+      <div class="proj-card-sm" data-r="up">
+        <div class="pcs-preview"><div class="pcs-icon"></div></div>
+        <div class="pcs-body">
+          <div class="pcs-num">02 — 2024</div>
+          <div class="pcs-title">Climate Action Website</div>
+          <div class="pcs-desc">Responsive 5-page website promoting climate awareness with improved navigation and accessibility across all pages and screen sizes.</div>
+          <div class="pcs-tags">
+            <span class="pcs-tag">HTML5</span>
+            <span class="pcs-tag">CSS3</span>
+          </div>
+        </div>
+      </div>
+      <!-- Card 3: Python Task Manager -->
+      <div class="proj-card-sm" data-r="up">
+        <div class="pcs-preview"><div class="pcs-icon"></div></div>
+        <div class="pcs-body">
+          <div class="pcs-num">03 — 2024</div>
+          <div class="pcs-title">Python Task Manager</div>
+          <div class="pcs-desc">CLI task management app handling 50+ tasks with full CRUD operations, input validation, and a menu-driven interface to reduce user errors.</div>
+          <div class="pcs-tags">
+            <span class="pcs-tag">Python</span>
+            <span class="pcs-tag">CRUD</span>
+            <span class="pcs-tag">CLI</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -482,56 +704,58 @@ var canvas=document.getElementById('bg-canvas');
 var ctx=canvas.getContext('2d');
 var mx=-9999,my=-9999;
 var dots=[];
+var isTouch=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
 
 function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
 resizeCanvas();
 window.addEventListener('resize',resizeCanvas,{passive:true});
 
-var COUNT=Math.min(70,Math.floor(window.innerWidth/18));
-for(var k=0;k<COUNT;k++){
-  dots.push({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,r:Math.random()*1.1+.3,vx:(Math.random()-.5)*.28,vy:(Math.random()-.5)*.28,o:Math.random()*.35+.08});
-}
-
-function drawCanvas(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  var i,j,d,dx,dy;
-  for(i=0;i<dots.length;i++){
-    for(j=i+1;j<dots.length;j++){
-      dx=dots[i].x-dots[j].x;dy=dots[i].y-dots[j].y;
-      d=Math.sqrt(dx*dx+dy*dy);
-      if(d<115){
-        ctx.beginPath();
-        ctx.strokeStyle='rgba(124,92,252,'+(0.1*(1-d/115))+')';
-        ctx.lineWidth=.5;
-        ctx.moveTo(dots[i].x,dots[i].y);ctx.lineTo(dots[j].x,dots[j].y);ctx.stroke();
+/* Disable canvas on mobile to save battery */
+if(!isTouch){
+  var COUNT=Math.min(70,Math.floor(window.innerWidth/18));
+  for(var k=0;k<COUNT;k++){
+    dots.push({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,r:Math.random()*1.1+.3,vx:(Math.random()-.5)*.28,vy:(Math.random()-.5)*.28,o:Math.random()*.35+.08});
+  }
+  function drawCanvas(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    var i,j,d,dx,dy,dSq,threshold=115,threshSq=threshold*threshold;
+    for(i=0;i<dots.length;i++){
+      for(j=i+1;j<dots.length;j++){
+        dx=dots[i].x-dots[j].x;dy=dots[i].y-dots[j].y;
+        dSq=dx*dx+dy*dy;
+        if(dSq<threshSq){
+          d=Math.sqrt(dSq);
+          ctx.beginPath();
+          ctx.strokeStyle='rgba(124,92,252,'+(0.1*(1-d/threshold))+')';
+          ctx.lineWidth=.5;
+          ctx.moveTo(dots[i].x,dots[i].y);ctx.lineTo(dots[j].x,dots[j].y);ctx.stroke();
+        }
       }
     }
+    for(i=0;i<dots.length;i++){
+      dx=dots[i].x-mx;dy=dots[i].y-my;
+      dSq=dx*dx+dy*dy;
+      if(dSq<16900&&dSq>0){var d2=Math.sqrt(dSq);dots[i].x+=(dx/d2)*.9;dots[i].y+=(dy/d2)*.9;}
+      dots[i].x+=dots[i].vx;dots[i].y+=dots[i].vy;
+      if(dots[i].x<0||dots[i].x>canvas.width)dots[i].vx*=-1;
+      if(dots[i].y<0||dots[i].y>canvas.height)dots[i].vy*=-1;
+      ctx.beginPath();ctx.arc(dots[i].x,dots[i].y,dots[i].r,0,Math.PI*2);
+      ctx.fillStyle='rgba(124,92,252,'+dots[i].o+')';ctx.fill();
+    }
+    requestAnimationFrame(drawCanvas);
   }
-  for(i=0;i<dots.length;i++){
-    dx=dots[i].x-mx;dy=dots[i].y-my;
-    d=Math.sqrt(dx*dx+dy*dy);
-    if(d<130&&d>0){dots[i].x+=(dx/d)*.9;dots[i].y+=(dy/d)*.9;}
-    dots[i].x+=dots[i].vx;dots[i].y+=dots[i].vy;
-    if(dots[i].x<0||dots[i].x>canvas.width)dots[i].vx*=-1;
-    if(dots[i].y<0||dots[i].y>canvas.height)dots[i].vy*=-1;
-    ctx.beginPath();ctx.arc(dots[i].x,dots[i].y,dots[i].r,0,Math.PI*2);
-    ctx.fillStyle='rgba(124,92,252,'+dots[i].o+')';ctx.fill();
-  }
-  requestAnimationFrame(drawCanvas);
+  drawCanvas();
+} else {
+  canvas.style.display='none'; /* hide canvas on touch = cleaner mobile */
 }
-drawCanvas();
+
 document.addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;},{passive:true});
 
 /* ── CURSOR ── */
 var cDot=document.getElementById('c-dot');
 var cRing=document.getElementById('c-ring');
 var cx=0,cy=0,tx=0,ty=0;
-var isTouch=('ontouchstart' in window)||(navigator.maxTouchPoints>0);
-if(isTouch){
-  cDot.style.display='none';cRing.style.display='none';
-  document.body.style.cursor='auto';
-  document.querySelectorAll('a,button').forEach(function(el){el.style.cursor='pointer';});
-} else {
+if(!isTouch){
   document.addEventListener('mousemove',function(e){
     tx=e.clientX;ty=e.clientY;
     cDot.style.left=tx+'px';cDot.style.top=ty+'px';
@@ -546,6 +770,44 @@ if(isTouch){
     el.addEventListener('mouseleave',function(){document.body.classList.remove('hov');});
   });
 }
+
+/* ── PARALLAX ── */
+var heroParallax=document.getElementById('heroParallax');
+var orbA=document.getElementById('orbA');
+var orbB=document.getElementById('orbB');
+var pxDecos=document.querySelectorAll('[data-px-speed]');
+var lastScrollY=window.scrollY;
+var ticking=false;
+
+/* Mouse parallax on hero (desktop only) */
+if(!isTouch && heroParallax){
+  document.addEventListener('mousemove',function(e){
+    var xPct=(e.clientX/window.innerWidth-.5);
+    var yPct=(e.clientY/window.innerHeight-.5);
+    heroParallax.style.transform='translate3d('+(xPct*-18)+'px,'+(yPct*-12)+'px,0)';
+    if(orbA)orbA.style.transform='translate3d('+(xPct*28)+'px,'+(yPct*18)+'px,0)';
+    if(orbB)orbB.style.transform='translate3d('+(xPct*-22)+'px,'+(yPct*14)+'px,0)';
+  },{passive:true});
+}
+
+/* Scroll parallax for section decorators + scroll cue hide */
+function onScroll(){
+  lastScrollY=window.scrollY;
+  /* hide scroll cue after scrolling */
+  var cue=document.getElementById('scrollCue');
+  if(cue)cue.style.opacity=lastScrollY>80?'0':'1';
+  /* parallax decorators */
+  pxDecos.forEach(function(el){
+    var speed=parseFloat(el.getAttribute('data-px-speed')||0.1);
+    var rect=el.parentElement.getBoundingClientRect();
+    var offset=(window.innerHeight/2-rect.top)*speed;
+    el.style.transform='translate3d(0,'+offset+'px,0)';
+  });
+  ticking=false;
+}
+window.addEventListener('scroll',function(){
+  if(!ticking){requestAnimationFrame(onScroll);ticking=true;}
+},{passive:true});
 
 /* ── MOBILE MENU ── */
 window.toggleMob=function(){
@@ -570,8 +832,8 @@ function revealHero(){
       line.style.transform='translateY(0)';
     },i*130);
   });
-  var ids=['heroEyebrow','heroSub','heroBtns','scrollCue'];
-  var delays=[150,550,720,980];
+  var ids=['heroEyebrow','heroSub','heroBtns','scrollCue','heroPhoto'];
+  var delays=[150,550,720,980,400];
   ids.forEach(function(id,i){
     var el=document.getElementById(id);
     if(el)setTimeout(function(){el.style.transition='opacity .8s ease';el.style.opacity='1';},delays[i]);
